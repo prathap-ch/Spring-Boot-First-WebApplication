@@ -3,9 +3,13 @@ package com.skillUp.controllers;
 import java.net.URI;
 import java.util.List;
 
-import javax.websocket.server.PathParam;
+import javax.validation.Valid;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,25 +27,33 @@ public class UsersController {
 	@Autowired
 	UsersDaoService service;
 
-	@GetMapping("/allUsers")
+	@GetMapping("/users")
 	public List<Users> getAllUsers() {
 		return service.findAllUsers();
 	}
-	
-	@GetMapping("/allUsers/{id}")
-	public Users getOne(@PathVariable int id) throws UserNotFoundException {
+
+	@GetMapping("/users/{id}")
+	public EntityModel<Users> retrieveUser(@PathVariable int id) throws UserNotFoundException {
 		Users user = service.findOne(id);
-		if(null== user)
+		if (null == user)
 			throw new UserNotFoundException("user not found with given details");
-		
-		return user;
+		EntityModel<Users> model = EntityModel.of(user);
+		WebMvcLinkBuilder linktoUser=linkTo(methodOn(this.getClass()).getAllUsers()); 
+		model.add(linktoUser.withRel("all-users"));
+		return model;
 	}
-	
+
 	@PostMapping("/user")
-	public ResponseEntity<Object> save(@RequestBody Users user) {
-		Users savedUser=service.save(user);
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest().replacePath("allUsers/{id}").buildAndExpand(savedUser.getId()).toUri();
+	public ResponseEntity<Object> save(@Valid @RequestBody Users user) {
+		Users savedUser = service.save(user);
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().replacePath("allUsers/{id}")
+				.buildAndExpand(savedUser.getId()).toUri();
 		return ResponseEntity.created(location).build();
-		
+
+	}
+
+	@PostMapping("/user/{id}")
+	public void delete(@PathVariable int id) throws UserNotFoundException {
+		service.delete(id);
 	}
 }

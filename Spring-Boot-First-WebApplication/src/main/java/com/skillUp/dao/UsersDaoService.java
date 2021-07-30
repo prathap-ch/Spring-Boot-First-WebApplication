@@ -9,6 +9,7 @@ import org.apache.catalina.User;
 import org.springframework.stereotype.Component;
 
 import com.skillUp.beans.Users;
+import com.skillUp.exceptions.UserNotFoundException;
 
 @Component
 public class UsersDaoService {
@@ -33,6 +34,13 @@ public class UsersDaoService {
 			user.setId(++count);
 		userList.add(user);
 		return user;
+	}
+	
+	public void delete(int id) throws UserNotFoundException {
+		long count=userList.stream().filter(user->user.getId()==id).map(user->userList.remove(user)).count();
+	if(count==0) {
+		throw new UserNotFoundException("Delete unSuccessful : no user found with goven details");
+	}
 	}
 	
 	public Users findOne(int id) {
